@@ -26,85 +26,101 @@
 
 <template>
   <div ref="enoAutoScroll" class="eno-auto-scroll">
-    <div ref="enoAutoScrollContent" class="eno-auto-scroll_container" :class="{'scrolling':isScrolling}">
+    <div
+      ref="enoAutoScrollContent"
+      class="eno-auto-scroll_container"
+      :class="{ scrolling: isScrolling }"
+    >
       <slot></slot>
     </div>
   </div>
-
 </template>
 
 <script>
-
 export default {
-  name    : 'EnoAutoScroll',
-  props   : {
+  name: "EnoAutoScroll",
+  props: {
     // 经过scrollScope范围，过程时间(ms)
-    duration           : {
-      type   : Number,
-      default: 3000
+    duration: {
+      type: Number,
+      default: 3000,
     },
     // 在duration时间内滚动的范围。('component' | 'content' | Number) component，表示该组件可视高度。content，表示整个列表。否则指定高度数字(px)
-    scrollScope        : {
-      type   : [Number, String],
-      default: 'component'
+    scrollScope: {
+      type: [Number, String],
+      default: "component",
     },
     // 鼠标划过是否暂停
-    isMouseStop        : {
-      type   : Boolean,
-      default: true
+    isMouseStop: {
+      type: Boolean,
+      default: true,
     },
     // 是否以守护程序方式继续后台运行，默认false。当页面隐藏的时候，不会滚动
-    isDaemon           : {
-      type   : Boolean,
-      default: false
+    isDaemon: {
+      type: Boolean,
+      default: false,
     },
     // 是否支持鼠标滑轮控制，必须开启[:isMouseStop]，这个操作的设置才有效
     isMousewheelControl: {
-      type   : Boolean,
-      default: true
+      type: Boolean,
+      default: true,
     },
     // 是否从底部开始滚动
-    isScrollFromBottom : {
-      type   : Boolean,
-      default: true
-    }
-
+    isScrollFromBottom: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
-      isScrolling        : false, // 是否正在滚动
-      isListenered       : false, // 是否设置过监听
-      componentSize      : 0, // 组件高度px
-      contentSize        : 0, // 内容高度px
+      isScrolling: false, // 是否正在滚动
+      isListenered: false, // 是否设置过监听
+      componentSize: 0, // 组件高度px
+      contentSize: 0, // 内容高度px
       scrollScopeDuration: 0, // 滚动范围内，滚动结束所需要的时间px
       scrollOffsetCurrent: 0, // 当前应该滚动的高度，用于累加赋值px
       scrollSizeUnit100ms: 0, // 每100毫秒滚动的高度px
-      interval           : null, // 轮循
-      animateDuration    : 600
+      interval: null, // 轮循
+      animateDuration: 600,
     };
   },
   computed: {
     // 滚动的百分比
     scrollPerNum() {
-      const scrollPerNum = Number((this.scrollOffsetCurrent + this.componentSize) / (this.contentSize + this.componentSize) * 100).toFixed();
-      return this.contentSize === 0 ? 0 : (scrollPerNum < 0 ? 0 : (scrollPerNum > 100 ? 100 : scrollPerNum));
-    }
+      const scrollPerNum = Number(
+        ((this.scrollOffsetCurrent + this.componentSize) /
+          (this.contentSize + this.componentSize)) *
+          100
+      ).toFixed();
+      return this.contentSize === 0
+        ? 0
+        : scrollPerNum < 0
+        ? 0
+        : scrollPerNum > 100
+        ? 100
+        : scrollPerNum;
+    },
   },
-  watch   : {
+  watch: {
     scrollPerNum(v) {
-      this.$emit('on-progress', v);
-    }
-
+      this.$emit("on-progress", v);
+    },
   },
   updated() {
     this.$_addALlListener();
-    if (this.$_checkForSlotContentLengthChange() && this.$refs.enoAutoScrollContent) {
+    if (
+      this.$_checkForSlotContentLengthChange() &&
+      this.$refs.enoAutoScrollContent
+    ) {
       this.startScroll();
     }
   },
   mounted() {
     this.$_addALlListener();
-    if (this.$_checkForSlotContentLengthChange() && this.$refs.enoAutoScrollContent) {
+    if (
+      this.$_checkForSlotContentLengthChange() &&
+      this.$refs.enoAutoScrollContent
+    ) {
       this.startScroll();
     }
   },
@@ -115,7 +131,7 @@ export default {
     // 移除事件监听
     this.$_removeAllListener();
     // progress 置 0
-    this.$emit('on-progress', 0);
+    this.$emit("on-progress", 0);
   },
   methods: {
     /* _____________________________________________________________________________________ */
@@ -171,18 +187,21 @@ export default {
       // 只有初始化滚动条完毕 ，且当内容高度 大于 当前组件可视高度，才会自动滚动
       if (that.contentSize > that.componentSize) {
         that.interval = setInterval(() => {
-          that.scrollOffsetCurrent = that.scrollOffsetCurrent + that.scrollSizeUnit100ms;
+          that.scrollOffsetCurrent =
+            that.scrollOffsetCurrent + that.scrollSizeUnit100ms;
 
           // 若scrollOffsetCurrent长度超过总长度，则从组件以下区域开始
           if (that.scrollOffsetCurrent >= that.contentSize) {
-            that.scrollOffsetCurrent                         = -that.componentSize;
-            that.$refs.enoAutoScrollContent.style.visibility = 'hidden';
-            that.isScrolling                                 = false;
-            that.$emit('on-scroll-end');
+            that.scrollOffsetCurrent = -that.componentSize;
+            that.$refs.enoAutoScrollContent.style.visibility = "hidden";
+            that.isScrolling = false;
+            that.$emit("on-scroll-end");
           } else {
-            that.$refs.enoAutoScrollContent.style.visibility = 'visible';
+            that.$refs.enoAutoScrollContent.style.visibility = "visible";
             //  若允许后台运行，且已经在后台，则设置动画间隔时间为0ms
-            this.isScrolling                                 = !(this.isDaemon && document.visibilityState === 'hidden');
+            this.isScrolling = !(
+              this.isDaemon && document.visibilityState === "hidden"
+            );
           }
           that.$refs.enoAutoScrollContent.style.transform = `translateY(${-that.scrollOffsetCurrent}px)`;
         }, that.animateDuration);
@@ -210,12 +229,16 @@ export default {
       if (isToTop) {
         this.scrollOffsetCurrent = 0;
       } else {
-        this.scrollOffsetCurrent = this.contentSize > this.componentSize && this.isScrollFromBottom ? -this.componentSize : 0;
+        this.scrollOffsetCurrent =
+          this.contentSize > this.componentSize && this.isScrollFromBottom
+            ? -this.componentSize
+            : 0;
       }
-      this.$refs.enoAutoScrollContent.style.visibility = 'hidden';
-      this.isScrolling                                 = false;
-      this.$refs.enoAutoScrollContent.style.transform  = `translateY(${-this.scrollOffsetCurrent}px)`;
-      this.$refs.enoAutoScrollContent.style.visibility = 'visible';
+      this.$refs.enoAutoScrollContent.style.visibility = "hidden";
+      this.isScrolling = false;
+      this.$refs.enoAutoScrollContent.style.transform = `translateY(${-this
+        .scrollOffsetCurrent}px)`;
+      this.$refs.enoAutoScrollContent.style.visibility = "visible";
     },
 
     /* _____________________________________________________________________________________ */
@@ -240,13 +263,25 @@ export default {
         // 监听鼠标
         // 若允许鼠标划过，即停止滚动，则设置监听
         if (that.isMouseStop) {
-          that.$refs.enoAutoScroll.addEventListener('mouseover', that.$_scrollMouseOver);
-          that.$refs.enoAutoScroll.addEventListener('mouseout', that.$_scrollMouseOut);
+          that.$refs.enoAutoScroll.addEventListener(
+            "mouseover",
+            that.$_scrollMouseOver
+          );
+          that.$refs.enoAutoScroll.addEventListener(
+            "mouseout",
+            that.$_scrollMouseOut
+          );
           if (that.isMousewheelControl) {
-            that.$refs.enoAutoScroll.addEventListener('mousewheel', that.$_scrollMouseWheel);
+            that.$refs.enoAutoScroll.addEventListener(
+              "mousewheel",
+              that.$_scrollMouseWheel
+            );
           }
         }
-        window.addEventListener('visibilitychange', that.$_scrollVisibilityChange);
+        window.addEventListener(
+          "visibilitychange",
+          that.$_scrollVisibilityChange
+        );
         return true;
       }
     },
@@ -256,10 +291,22 @@ export default {
     $_removeAllListener() {
       if (this.isListenered) {
         this.isListenered = false;
-        this.$refs.enoAutoScroll.removeEventListener('mouseover', this.$_scrollMouseOver);
-        this.$refs.enoAutoScroll.removeEventListener('mouseout', this.$_scrollMouseOut);
-        this.$refs.enoAutoScroll.removeEventListener('mousewheel', this.$_scrollMouseWheel);
-        window.removeEventListener('visibilitychange', this.$_scrollVisibilityChange);
+        this.$refs.enoAutoScroll.removeEventListener(
+          "mouseover",
+          this.$_scrollMouseOver
+        );
+        this.$refs.enoAutoScroll.removeEventListener(
+          "mouseout",
+          this.$_scrollMouseOut
+        );
+        this.$refs.enoAutoScroll.removeEventListener(
+          "mousewheel",
+          this.$_scrollMouseWheel
+        );
+        window.removeEventListener(
+          "visibilitychange",
+          this.$_scrollVisibilityChange
+        );
       }
     },
     /**
@@ -287,11 +334,31 @@ export default {
     $_scrollMouseWheel(e) {
       e.preventDefault();
       e.stopPropagation();
-      const scrollOffsetCurrent = this.scrollOffsetCurrent + Math.floor(e.wheelDeltaY / 3);
-      if (scrollOffsetCurrent > -this.componentSize && scrollOffsetCurrent < this.contentSize) {
+      let scrollOffsetCurrent =
+        this.scrollOffsetCurrent + Math.floor(-e.wheelDeltaY / 3);
+
+      // 我就是不让他滚动出空白区域
+      if (
+        scrollOffsetCurrent > this.contentSize - this.componentSize &&
+        this.scrollOffsetCurrent < this.contentSize - this.componentSize
+      ) {
+        scrollOffsetCurrent = this.contentSize - this.componentSize;
+      }
+
+      if (scrollOffsetCurrent < 0 && this.scrollOffsetCurrent > 0) {
+        scrollOffsetCurrent = 0;
+      }
+
+      if (
+        (scrollOffsetCurrent <= this.contentSize - this.componentSize &&
+          e.wheelDeltaY < 0) ||
+        (scrollOffsetCurrent >= 0 && e.wheelDeltaY > 0)
+      ) {
         // 若内容高度小于等于组件高度不进行滚动 直接设置0
-        this.scrollOffsetCurrent                        = this.contentSize <= this.componentSize ? 0 : scrollOffsetCurrent;
-        this.$refs.enoAutoScrollContent.style.transform = `translateY(${-this.scrollOffsetCurrent}px)`;
+        this.scrollOffsetCurrent =
+          this.contentSize <= this.componentSize ? 0 : scrollOffsetCurrent;
+        this.$refs.enoAutoScrollContent.style.transform = `translateY(${-this
+          .scrollOffsetCurrent}px)`;
       }
     },
     /**
@@ -299,9 +366,10 @@ export default {
      * @param e
      */
     $_scrollVisibilityChange(e) {
+      console.log(e);
       // 若非后台运行，则当窗口可见改变的时候，进行相关操作
       if (!this.isDaemon) {
-        if (document.visibilityState === 'hidden') {
+        if (document.visibilityState === "hidden") {
           this.pauseScroll();
         } else {
           this.keepScroll();
@@ -314,8 +382,15 @@ export default {
      */
     $_checkForSlotContentLengthChange() {
       let height = 0;
-      if (this.$slots.default && this.$slots.default[0] && this.$slots.default[0].elm && this.$slots.default[0].elm.offsetHeight) {
-        height = Array.from(this.$slots.default).map(item => item.elm.offsetHeight).reduce((t, h) => t + h);
+      if (
+        this.$slots.default &&
+        this.$slots.default[0] &&
+        this.$slots.default[0].elm &&
+        this.$slots.default[0].elm.offsetHeight
+      ) {
+        height = Array.from(this.$slots.default)
+          .map((item) => item.elm.offsetHeight)
+          .reduce((t, h) => t + h);
       }
       if (height !== this.lengthPrev) {
         this.lengthPrev = height;
@@ -333,49 +408,52 @@ export default {
         that.contentSize = 0;
       } else {
         that.componentSize = that.$refs.enoAutoScroll.offsetHeight;
-        that.contentSize   = that.$refs.enoAutoScrollContent.offsetHeight;
+        that.contentSize = that.$refs.enoAutoScrollContent.offsetHeight;
 
         // 计算出每100毫秒滚动的高度
         switch (that.scrollScope) {
-          case 'component': // 组件高度
-            that.scrollSizeUnit100ms = that.componentSize / that.duration * that.animateDuration;
+          case "component": // 组件高度
+            that.scrollSizeUnit100ms =
+              (that.componentSize / that.duration) * that.animateDuration;
             break;
-          case 'content': // 整个内容高度
-            that.scrollSizeUnit100ms = that.contentSize / that.duration * that.animateDuration;
+          case "content": // 整个内容高度
+            that.scrollSizeUnit100ms =
+              (that.contentSize / that.duration) * that.animateDuration;
             break;
-          default: // 指定高度
-            that.scrollSizeUnit100ms = that.scrollScope / that.duration * that.animateDuration;
+          default:
+            // 指定高度
+            that.scrollSizeUnit100ms =
+              (that.scrollScope / that.duration) * that.animateDuration;
             break;
         }
       }
       return that.contentSize;
-    }
+    },
     /* _____________________________________________________________________________________ */
     /* _____________________________________________________________________________________ */
     /* _____________________________________________________________________________________ */
     /* _____________________ [ private: *,query,fetch,action,init ] ________________________ */
-
-  }
+  },
 };
 </script>
 <style scoped>
 .eno-auto-scroll {
-  position : relative;
-  overflow : hidden;
-  height   : 100%;
-  width    : 100%;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
 
 .eno-auto-scroll_container {
-  display : block;
-  width   : 100%;
+  display: block;
+  width: 100%;
 }
 
 .eno-auto-scroll_container:not(.scrolling) {
-  transition : all 0ms linear 0ms;
+  transition: all 0ms linear 0ms;
 }
 
 .eno-auto-scroll_container.scrolling {
-  transition : all 600ms linear 0ms;
+  transition: all 600ms linear 0ms;
 }
 </style>
